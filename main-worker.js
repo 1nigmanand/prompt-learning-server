@@ -78,21 +78,8 @@ class InternalLoadBalancer {
         if (response.ok) {
           console.log(`Internal worker ${workerBinding} responded successfully`);
           
-          // Add CORS headers to successful response
-          const modifiedResponse = new Response(response.body, {
-            status: response.status,
-            statusText: response.statusText,
-            headers: {
-              ...Object.fromEntries(response.headers),
-              'Access-Control-Allow-Origin': '*',
-              'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-              'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-              'X-Served-By': workerBinding,
-              'X-Load-Balancer': 'main-worker'
-            }
-          });
-          
-          return modifiedResponse;
+          // Return response without modifying headers (CORS handled at main level)
+          return response;
         } else {
           throw new Error(`Worker returned status: ${response.status}`);
         }
@@ -117,8 +104,8 @@ class InternalLoadBalancer {
     }), {
       status: 503,
       headers: { 
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        'Content-Type': 'application/json'
+        // CORS headers will be added at the main handler level
       }
     });
   }
@@ -142,12 +129,20 @@ class InternalLoadBalancer {
   }
 }
 
-// CORS headers
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
-  'Access-Control-Max-Age': '86400',
+// CORS headers with specific allowed origins
+const allowedOrigins = [
+  'https://testing-repo-swart-eight.vercel.app',
+  'https://abracadraw.navgurukul.org'
+];
+
+const getCorsHeaders = (origin) => {
+  const isAllowed = allowedOrigins.includes(origin) || !origin; // Allow no origin for direct API calls
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? (origin || '*') : 'null',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'Access-Control-Max-Age': '86400',
+  };
 };
 
 // Main request handler
@@ -155,6 +150,8 @@ async function handleRequest(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;
   const method = request.method;
+  const origin = request.headers.get('Origin');
+  const corsHeaders = getCorsHeaders(origin);
 
   // Handle CORS preflight
   if (method === 'OPTIONS') {
@@ -170,7 +167,23 @@ async function handleRequest(request, env) {
   try {
     // API routes - forward to internal workers
     if (path.startsWith('/api/')) {
-      return await loadBalancer.forwardRequest(request, env);
+      const response = await loadBalancer.forwardRequest(request, env);
+      
+      // Read the response body first
+      const responseBody = await response.text();
+      
+      // Add CORS headers to the response
+      const modifiedResponse = new Response(responseBody, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders,
+          'X-Load-Balancer': 'main-worker'
+        }
+      });
+      
+      return modifiedResponse;
     }
     
     // Root endpoint - Main API documentation

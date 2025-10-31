@@ -4,11 +4,6 @@
  * Used internally by the main load balancer
  */
 
-// Basic headers for internal responses (CORS handled at load balancer level)
-const basicHeaders = {
-  'Content-Type': 'application/json'
-};
-
 // Image generation logic (adapted for Cloudflare Workers)
 const generateImage = async (prompt) => {
   try {
@@ -77,11 +72,11 @@ async function handleRequest(request, env) {
   const path = url.pathname;
   const method = request.method;
 
-  // Handle CORS preflight requests (not needed for internal workers)
+  // Handle CORS preflight requests
   if (method === 'OPTIONS') {
     return new Response(null, {
       status: 200,
-      headers: basicHeaders
+      headers: corsHeaders
     });
   }
 
@@ -122,7 +117,7 @@ async function handleRequest(request, env) {
       status: 404,
       headers: {
         'Content-Type': 'application/json',
-        ...basicHeaders
+        ...corsHeaders
       }
     });
     
@@ -136,7 +131,7 @@ async function handleRequest(request, env) {
       status: 500,
       headers: {
         'Content-Type': 'application/json',
-        ...basicHeaders
+        ...corsHeaders
       }
     });
   }
@@ -216,7 +211,7 @@ print(response.json())`
     status: 200,
     headers: {
       'Content-Type': 'application/json',
-      ...basicHeaders
+      ...corsHeaders
     }
   });
 }
@@ -234,7 +229,7 @@ async function handleHealth() {
     status: 200,
     headers: {
       'Content-Type': 'application/json',
-      ...basicHeaders
+      ...corsHeaders
     }
   });
 }
@@ -275,7 +270,7 @@ async function handleStatus(env) {
     status: 200,
     headers: {
       'Content-Type': 'application/json',
-      ...basicHeaders
+      ...corsHeaders
     }
   });
 }
@@ -291,7 +286,7 @@ async function handleGenerateImage(request) {
         status: 400,
         headers: {
           'Content-Type': 'application/json',
-          ...basicHeaders
+          ...corsHeaders
         }
       });
     }
@@ -305,7 +300,7 @@ async function handleGenerateImage(request) {
         status: 400,
         headers: {
           'Content-Type': 'application/json',
-          ...basicHeaders
+          ...corsHeaders
         }
       });
     }
@@ -321,7 +316,7 @@ async function handleGenerateImage(request) {
         status: 400,
         headers: {
           'Content-Type': 'application/json',
-          ...basicHeaders
+          ...corsHeaders
         }
       });
     }
@@ -334,7 +329,7 @@ async function handleGenerateImage(request) {
         status: 400,
         headers: {
           'Content-Type': 'application/json',
-          ...basicHeaders
+          ...corsHeaders
         }
       });
     }
@@ -347,7 +342,7 @@ async function handleGenerateImage(request) {
         status: 400,
         headers: {
           'Content-Type': 'application/json',
-          ...basicHeaders
+          ...corsHeaders
         }
       });
     }
@@ -360,7 +355,7 @@ async function handleGenerateImage(request) {
         status: 400,
         headers: {
           'Content-Type': 'application/json',
-          ...basicHeaders
+          ...corsHeaders
         }
       });
     }
@@ -383,7 +378,7 @@ async function handleGenerateImage(request) {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        ...basicHeaders
+        ...corsHeaders
       }
     });
     
@@ -398,7 +393,7 @@ async function handleGenerateImage(request) {
       status: 500,
       headers: {
         'Content-Type': 'application/json',
-        ...basicHeaders
+        ...corsHeaders
       }
     });
   }
@@ -415,7 +410,7 @@ async function handleGenerateImageStream(request) {
         status: 400,
         headers: {
           'Content-Type': 'application/json',
-          ...basicHeaders
+          ...corsHeaders
         }
       });
     }
@@ -431,7 +426,7 @@ async function handleGenerateImageStream(request) {
         status: 400,
         headers: {
           'Content-Type': 'application/json',
-          ...basicHeaders
+          ...corsHeaders
         }
       });
     }
@@ -453,7 +448,7 @@ async function handleGenerateImageStream(request) {
         status: 200,
         headers: {
           'Content-Type': 'application/json',
-          ...basicHeaders
+          ...corsHeaders
         }
       });
       
@@ -465,7 +460,7 @@ async function handleGenerateImageStream(request) {
         status: 500,
         headers: {
           'Content-Type': 'application/json',
-          ...basicHeaders
+          ...corsHeaders
         }
       });
     }
@@ -479,7 +474,7 @@ async function handleGenerateImageStream(request) {
       status: 500,
       headers: {
         'Content-Type': 'application/json',
-        ...basicHeaders
+        ...corsHeaders
       }
     });
   }
