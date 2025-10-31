@@ -65,6 +65,17 @@ class InternalLoadBalancer {
   async forwardRequest(request, env) {
     const maxRetries = 3;
     let lastError;
+    let originalRequestBody = null;
+    
+    // Cache the request body once since it can only be read once
+    try {
+      if (request.method === 'POST') {
+        const clone = request.clone();
+        originalRequestBody = await clone.json();
+      }
+    } catch (e) {
+      // Not JSON or already consumed, that's okay
+    }
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       const workerBinding = this.getNextWorker();
@@ -95,8 +106,39 @@ class InternalLoadBalancer {
       }
     }
     
-    // All retries failed
+    // All retries failed - attempt fallback before returning 503
     console.error('All internal workers failed after retries');
+    
+    const url = new URL(request.url);
+    // Only attempt fallback for direct image generation requests
+    if (url.pathname === '/api/generate-image' && request.method === 'POST') {
+      try {
+        const prompt = originalRequestBody?.prompt;
+        if (prompt && typeof prompt === 'string' && prompt.trim().length > 0 && prompt.length <= 1000) {
+          const encoded = encodeURIComponent(prompt.trim());
+          const imageUrl = `https://image.pollinations.ai/prompt/${encoded}`;
+          console.warn('Using direct Pollinations fallback for prompt:', prompt);
+
+          return new Response(JSON.stringify({
+            success: true,
+            imageUrl,
+            prompt,
+            serverUsed: 'pollinations-direct-fallback',
+            fallback: true,
+            timestamp: new Date().toISOString()
+          }), {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+        }
+      } catch (e) {
+        // If fallback attempt fails, continue to return 503 below
+        console.warn('Fallback attempt failed:', e?.message || e);
+      }
+    }
+
     return new Response(JSON.stringify({
       error: 'All internal workers unavailable',
       details: lastError?.message || 'Unknown error',

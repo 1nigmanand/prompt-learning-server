@@ -7,9 +7,12 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
+    "test": "node test-api.js",
+    "test:local": "node test-api.js",
     "worker:dev": "wrangler dev",
     "worker:deploy": "wrangler deploy",
-    "worker:deploy:main": "wrangler deploy",
+    "worker:deploy:main": "wrangler deploy --env main",
+    "worker:deploy:fix": "wrangler deploy --env main",
     "worker:deploy:all": "npm run worker:deploy:main && npm run worker:deploy:batch1 && npm run worker:deploy:batch2 && npm run worker:deploy:batch3 && npm run worker:deploy:batch4",
     "worker:deploy:batch1": "npm run worker:deploy:server1 && npm run worker:deploy:server2 && npm run worker:deploy:server3 && npm run worker:deploy:server4 && npm run worker:deploy:server5",
     "worker:deploy:batch2": "npm run worker:deploy:server6 && npm run worker:deploy:server7 && npm run worker:deploy:server8 && npm run worker:deploy:server9 && npm run worker:deploy:server10",
@@ -54,7 +57,8 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.18.2",
-    "helmet": "^7.1.0"
+    "helmet": "^7.1.0",
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "wrangler": "^4.45.2"
