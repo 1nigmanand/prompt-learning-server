@@ -141,3 +141,16 @@ build/Release
 # Build files
 dist/
 build/
+
+# Cloudflare Workers
+.wrangler/
+worker.js.map
+*.map
+
+# Environment files
+.env
+.env.test
+.env.production
+.env.local
+.dev.vars
+.prod.vars

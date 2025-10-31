@@ -1,0 +1,241 @@
+# Main Load Balancer Worker (Public Entry Point)
+name = "prompt-learning-server"
+main = "main-worker.js"
+compatibility_date = "2024-10-30"
+compatibility_flags = ["nodejs_compat"]
+
+# Service bindings to internal workers
+[[services]]
+binding = "SERVER1"
+service = "prompt-server-1"
+
+[[services]]
+binding = "SERVER2"
+service = "prompt-server-2"
+
+[[services]]
+binding = "SERVER3"
+service = "prompt-server-3"
+
+[[services]]
+binding = "SERVER4"
+service = "prompt-server-4"
+
+[[services]]
+binding = "SERVER5"
+service = "prompt-server-5"
+
+[[services]]
+binding = "SERVER6"
+service = "prompt-server-6"
+
+[[services]]
+binding = "SERVER7"
+service = "prompt-server-7"
+
+[[services]]
+binding = "SERVER8"
+service = "prompt-server-8"
+
+[[services]]
+binding = "SERVER9"
+service = "prompt-server-9"
+
+[[services]]
+binding = "SERVER10"
+service = "prompt-server-10"
+
+[[services]]
+binding = "SERVER11"
+service = "prompt-server-11"
+
+[[services]]
+binding = "SERVER12"
+service = "prompt-server-12"
+
+[[services]]
+binding = "SERVER13"
+service = "prompt-server-13"
+
+[[services]]
+binding = "SERVER14"
+service = "prompt-server-14"
+
+[[services]]
+binding = "SERVER15"
+service = "prompt-server-15"
+
+[[services]]
+binding = "SERVER16"
+service = "prompt-server-16"
+
+[[services]]
+binding = "SERVER17"
+service = "prompt-server-17"
+
+[[services]]
+binding = "SERVER18"
+service = "prompt-server-18"
+
+[[services]]
+binding = "SERVER19"
+service = "prompt-server-19"
+
+[[services]]
+binding = "SERVER20"
+service = "prompt-server-20"
+
+# 20 Internal Workers for load distribution
+[env.server1]
+name = "prompt-server-1"
+main = "worker.js"
+
+[env.server2]
+name = "prompt-server-2"
+main = "worker.js"
+
+[env.server3]
+name = "prompt-server-3"
+main = "worker.js"
+
+[env.server4]
+name = "prompt-server-4"
+main = "worker.js"
+
+[env.server5]
+name = "prompt-server-5"
+main = "worker.js"
+
+[env.server6]
+name = "prompt-server-6"
+main = "worker.js"
+
+[env.server7]
+name = "prompt-server-7"
+main = "worker.js"
+
+[env.server8]
+name = "prompt-server-8"
+main = "worker.js"
+
+[env.server9]
+name = "prompt-server-9"
+main = "worker.js"
+
+[env.server10]
+name = "prompt-server-10"
+main = "worker.js"
+
+[env.server11]
+name = "prompt-server-11"
+main = "worker.js"
+
+[env.server12]
+name = "prompt-server-12"
+main = "worker.js"
+
+[env.server13]
+name = "prompt-server-13"
+main = "worker.js"
+
+[env.server14]
+name = "prompt-server-14"
+main = "worker.js"
+
+[env.server15]
+name = "prompt-server-15"
+main = "worker.js"
+
+[env.server16]
+name = "prompt-server-16"
+main = "worker.js"
+
+[env.server17]
+name = "prompt-server-17"
+main = "worker.js"
+
+[env.server18]
+name = "prompt-server-18"
+main = "worker.js"
+
+[env.server19]
+name = "prompt-server-19"
+main = "worker.js"
+
+[env.server20]
+name = "prompt-server-20"
+main = "worker.js"
+
+# Main load balancer environment
+[env.main]
+name = "prompt-main-server"
+main = "main-worker.js"
+[[env.main.services]]
+binding = "SERVER1"
+service = "prompt-server-1"
+[[env.main.services]]
+binding = "SERVER2"
+service = "prompt-server-2"
+[[env.main.services]]
+binding = "SERVER3"
+service = "prompt-server-3"
+[[env.main.services]]
+binding = "SERVER4"
+service = "prompt-server-4"
+[[env.main.services]]
+binding = "SERVER5"
+service = "prompt-server-5"
+[[env.main.services]]
+binding = "SERVER6"
+service = "prompt-server-6"
+[[env.main.services]]
+binding = "SERVER7"
+service = "prompt-server-7"
+[[env.main.services]]
+binding = "SERVER8"
+service = "prompt-server-8"
+[[env.main.services]]
+binding = "SERVER9"
+service = "prompt-server-9"
+[[env.main.services]]
+binding = "SERVER10"
+service = "prompt-server-10"
+[[env.main.services]]
+binding = "SERVER11"
+service = "prompt-server-11"
+[[env.main.services]]
+binding = "SERVER12"
+service = "prompt-server-12"
+[[env.main.services]]
+binding = "SERVER13"
+service = "prompt-server-13"
+[[env.main.services]]
+binding = "SERVER14"
+service = "prompt-server-14"
+[[env.main.services]]
+binding = "SERVER15"
+service = "prompt-server-15"
+[[env.main.services]]
+binding = "SERVER16"
+service = "prompt-server-16"
+[[env.main.services]]
+binding = "SERVER17"
+service = "prompt-server-17"
+[[env.main.services]]
+binding = "SERVER18"
+service = "prompt-server-18"
+[[env.main.services]]
+binding = "SERVER19"
+service = "prompt-server-19"
+[[env.main.services]]
+binding = "SERVER20"
+service = "prompt-server-20"
+
+# Production and staging environments
+[env.production]
+name = "prompt-learning-server-prod"
+main = "main-worker.js"
+
+[env.staging]
+name = "prompt-learning-server-staging"
+main = "main-worker.js"

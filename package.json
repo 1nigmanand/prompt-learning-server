@@ -1,12 +1,43 @@
 {
   "name": "prompt-learning-server",
   "version": "1.0.0",
-  "description": "Express API server for AI-powered image generation using Pollinations AI",
+  "description": "AI Image Generation API - Express & Cloudflare Workers Compatible",
   "main": "server.js",
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "worker:dev": "wrangler dev",
+    "worker:deploy": "wrangler deploy",
+    "worker:deploy:main": "wrangler deploy",
+    "worker:deploy:all": "npm run worker:deploy:main && npm run worker:deploy:batch1 && npm run worker:deploy:batch2 && npm run worker:deploy:batch3 && npm run worker:deploy:batch4",
+    "worker:deploy:batch1": "npm run worker:deploy:server1 && npm run worker:deploy:server2 && npm run worker:deploy:server3 && npm run worker:deploy:server4 && npm run worker:deploy:server5",
+    "worker:deploy:batch2": "npm run worker:deploy:server6 && npm run worker:deploy:server7 && npm run worker:deploy:server8 && npm run worker:deploy:server9 && npm run worker:deploy:server10",
+    "worker:deploy:batch3": "npm run worker:deploy:server11 && npm run worker:deploy:server12 && npm run worker:deploy:server13 && npm run worker:deploy:server14 && npm run worker:deploy:server15",
+    "worker:deploy:batch4": "npm run worker:deploy:server16 && npm run worker:deploy:server17 && npm run worker:deploy:server18 && npm run worker:deploy:server19 && npm run worker:deploy:server20",
+    "worker:deploy:server1": "wrangler deploy --env server1",
+    "worker:deploy:server2": "wrangler deploy --env server2",
+    "worker:deploy:server3": "wrangler deploy --env server3",
+    "worker:deploy:server4": "wrangler deploy --env server4",
+    "worker:deploy:server5": "wrangler deploy --env server5",
+    "worker:deploy:server6": "wrangler deploy --env server6",
+    "worker:deploy:server7": "wrangler deploy --env server7",
+    "worker:deploy:server8": "wrangler deploy --env server8",
+    "worker:deploy:server9": "wrangler deploy --env server9",
+    "worker:deploy:server10": "wrangler deploy --env server10",
+    "worker:deploy:server11": "wrangler deploy --env server11",
+    "worker:deploy:server12": "wrangler deploy --env server12",
+    "worker:deploy:server13": "wrangler deploy --env server13",
+    "worker:deploy:server14": "wrangler deploy --env server14",
+    "worker:deploy:server15": "wrangler deploy --env server15",
+    "worker:deploy:server16": "wrangler deploy --env server16",
+    "worker:deploy:server17": "wrangler deploy --env server17",
+    "worker:deploy:server18": "wrangler deploy --env server18",
+    "worker:deploy:server19": "wrangler deploy --env server19",
+    "worker:deploy:server20": "wrangler deploy --env server20",
+    "worker:deploy:prod": "wrangler deploy --env production",
+    "worker:deploy:staging": "wrangler deploy --env staging",
+    "worker:tail": "wrangler tail"
   },
   "keywords": [
     "express",
@@ -14,14 +45,19 @@
     "image-generation",
     "pollinations",
     "ai",
-    "rest-api"
+    "rest-api",
+    "cloudflare-workers",
+    "edge-computing"
   ],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
     "cors": "^2.8.5",
+    "express": "^4.18.2",
     "helmet": "^7.1.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.45.2"
   },
   "engines": {
     "node": ">=16.0.0"
