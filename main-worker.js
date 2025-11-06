@@ -173,6 +173,7 @@ class InternalLoadBalancer {
 
 // CORS headers with specific allowed origins
 const allowedOrigins = [
+  "http://localhost:5173",
   'https://testing-repo-swart-eight.vercel.app',
   'https://abracadraw.navgurukul.org'
 ];
