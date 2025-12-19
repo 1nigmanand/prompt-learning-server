@@ -9,61 +9,83 @@ const basicHeaders = {
   'Content-Type': 'application/json'
 };
 
-// Image generation logic (adapted for Cloudflare Workers)
-const generateImage = async (prompt) => {
+// Round-robin counter for API key selection (per worker instance)
+let apiKeyIndex = 0;
+
+/**
+ * Get next API key using round-robin load balancing from environment
+ */
+const getNextApiKey = (env) => {
+  const API_KEYS = [
+    env.IMAGE_ROUTER_API_KEY_1,
+    env.IMAGE_ROUTER_API_KEY_2,
+    env.IMAGE_ROUTER_API_KEY_3,
+    env.IMAGE_ROUTER_API_KEY_4,
+    env.IMAGE_ROUTER_API_KEY_5,
+    env.IMAGE_ROUTER_API_KEY_6,
+    env.IMAGE_ROUTER_API_KEY_7
+  ].filter(key => key);
+  
+  if (API_KEYS.length === 0) {
+    throw new Error('No API keys configured');
+  }
+  
+  const key = API_KEYS[apiKeyIndex];
+  apiKeyIndex = (apiKeyIndex + 1) % API_KEYS.length;
+  return key;
+};
+
+const API_URL = 'https://api.imagerouter.io/v1/openai/images/generations';
+
+// Image generation logic using ImageRouter.io API
+const generateImage = async (prompt, env) => {
   try {
     if (!prompt || prompt.trim().length === 0) {
       throw new Error("Prompt cannot be empty");
     }
 
-    const width = 1024;
-    const height = 1024;
-    const seed = Math.floor(Math.random() * 1000);
-    const encodedPrompt = encodeURIComponent(prompt.trim());
-    
-    // Multiple URL formats for better compatibility (same logic as original)
-    const urlFormats = [
-      // Try this first since it's working
-      () => `https://image.pollinations.ai/prompt/${encodedPrompt}`,
-      // With minimal parameters
-      () => `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}`,
-      // With seed
-      () => `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&seed=${seed}`,
-      // Full parameters without model parameter
-      () => {
-        const params = new URLSearchParams({
-          width: width,
-          height: height,
-          seed: seed,
-          nologo: 'true'
-        });
-        return `https://image.pollinations.ai/prompt/${encodedPrompt}?${params.toString()}`;
-      }
-    ];
-    
-    // Try each URL format
-    for (let i = 0; i < urlFormats.length; i++) {
-      const imageUrl = urlFormats[i]();
-      
-      try {
-        // Test if the URL is accessible (Workers compatible)
-        const response = await fetch(imageUrl, { 
-          method: 'HEAD',
-          signal: AbortSignal.timeout(8000) // 8 second timeout
-        });
-        
-        if (response.ok && response.headers.get('content-type')?.startsWith('image/')) {
-          console.log(`✅ Successfully generated image using format ${i + 1}`);
-          return imageUrl;
-        }
-      } catch (error) {
-        console.warn(`❌ Format ${i + 1} failed:`, error.message);
-        continue;
-      }
+    console.log(`🎨 Generating image with ImageRouter.io for prompt: "${prompt}"`);
+
+    // Enhance prompt for exact literal interpretation
+    const enhancedPrompt = `${prompt.trim()}, exactly as described, nothing more nothing less, literal interpretation, precise and accurate`;
+
+    // Get next API key for load balancing
+    const apiKey = getNextApiKey(env);
+
+    // Call ImageRouter.io API with optimized parameters for accuracy
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        prompt: enhancedPrompt,
+        model: 'run-diffusion/Juggernaut-Lightning-Flux',
+        n: 1,
+        size: 'auto',
+        quality: 'auto',
+        output_format: 'webp'
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`ImageRouter.io API error: ${response.status} - ${errorData}`);
     }
+
+    const data = await response.json();
     
-    // If all Pollinations URLs fail, throw error
-    throw new Error("All image generation URL formats failed");
+    // Extract image URL from response
+    const imageUrl = data?.data?.[0]?.url || data?.url || data?.image_url;
+    
+    if (!imageUrl) {
+      console.error('Unexpected API response:', data);
+      throw new Error('No image URL in API response');
+    }
+
+    console.log(`✅ Successfully generated image: ${imageUrl}`);
+    return imageUrl;
     
   } catch (error) {
     console.error("❌ Error in generateImage:", error);
@@ -100,11 +122,11 @@ async function handleRequest(request, env) {
     }
     
     if (path === '/api/generate-image' && method === 'POST') {
-      return handleGenerateImage(request);
+      return handleGenerateImage(request, env);
     }
     
     if (path === '/api/generate-image-stream' && method === 'POST') {
-      return handleGenerateImageStream(request);
+      return handleGenerateImageStream(request, env);
     }
     
     // 404 for unknown routes
@@ -150,7 +172,7 @@ async function handleRoot(request) {
   const apiDocs = {
     name: "AI Image Generation API",
     version: "1.0.0",
-    description: "Generate images from text prompts using Pollinations AI - Deployed on Cloudflare Workers",
+    description: "Generate images from text prompts using ImageRouter.io (Juggernaut-Lightning-Flux) - Deployed on Cloudflare Workers",
     platform: "Cloudflare Workers Edge",
     performance: {
       globalEdge: "Available in 200+ cities worldwide",
@@ -280,7 +302,7 @@ async function handleStatus(env) {
   });
 }
 
-async function handleGenerateImage(request) {
+async function handleGenerateImage(request, env) {
   try {
     const contentType = request.headers.get('Content-Type');
     if (!contentType || !contentType.includes('application/json')) {
@@ -368,7 +390,7 @@ async function handleGenerateImage(request) {
     console.log(`🎨 Generating image for prompt: "${prompt}"`);
     
     // Generate image
-    const imageUrl = await generateImage(prompt);
+    const imageUrl = await generateImage(prompt, env);
     
     console.log(`✅ Image generated successfully: ${imageUrl}`);
     
@@ -377,7 +399,7 @@ async function handleGenerateImage(request) {
       imageUrl: imageUrl,
       prompt: prompt,
       timestamp: new Date().toISOString(),
-      generatedBy: 'Pollinations AI',
+      generatedBy: 'ImageRouter.io (Juggernaut-Lightning-Flux)',
       platform: 'Cloudflare Workers'
     }), {
       status: 200,
@@ -404,7 +426,7 @@ async function handleGenerateImage(request) {
   }
 }
 
-async function handleGenerateImageStream(request) {
+async function handleGenerateImageStream(request, env) {
   try {
     const body = await request.json().catch(() => null);
     if (!body || !body.prompt) {
@@ -439,14 +461,14 @@ async function handleGenerateImageStream(request) {
     // For Workers, we'll return immediate result since streaming is complex
     // In a real implementation, you might use Durable Objects for state management
     try {
-      const imageUrl = await generateImage(prompt);
+      const imageUrl = await generateImage(prompt, env);
       
       return new Response(JSON.stringify({
         success: true,
         imageUrl: imageUrl,
         prompt: prompt,
         timestamp: new Date().toISOString(),
-        generatedBy: 'Pollinations AI',
+        generatedBy: 'ImageRouter.io (Juggernaut-Lightning-Flux)',
         platform: 'Cloudflare Workers',
         note: 'Streaming simplified for Workers environment'
       }), {

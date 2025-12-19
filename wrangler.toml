@@ -4,6 +4,10 @@ main = "main-worker.js"
 compatibility_date = "2024-10-30"
 compatibility_flags = ["nodejs_compat"]
 
+# Environment variables (secrets should be set via wrangler secret)
+[vars]
+API_URL = "https://api.imagerouter.io/v1/openai/images/generations"
+
 # Service bindings to internal workers
 [[services]]
 binding = "SERVER1"

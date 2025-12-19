@@ -1,7 +1,45 @@
 // Simple Image Generation Utility for Prompt Learning Tool
 
+// API Configuration - Load balancing across multiple API keys
+const API_KEYS = [
+  process.env.IMAGE_ROUTER_API_KEY_1,
+  process.env.IMAGE_ROUTER_API_KEY_2,
+  process.env.IMAGE_ROUTER_API_KEY_3,
+  process.env.IMAGE_ROUTER_API_KEY_4,
+  process.env.IMAGE_ROUTER_API_KEY_5,
+  process.env.IMAGE_ROUTER_API_KEY_6,
+  process.env.IMAGE_ROUTER_API_KEY_7
+].filter(key => key); // Remove undefined keys
+
+const API_URL = 'https://api.imagerouter.io/v1/openai/images/generations';
+
+// Validate API keys on module load
+if (API_KEYS.length === 0) {
+  console.warn('⚠️ WARNING: No API keys found in environment variables!');
+} else {
+  console.log(`✅ Loaded ${API_KEYS.length} API keys for load balancing`);
+}
+
+// Round-robin counter for API key selection
+let apiKeyIndex = 0;
+
 /**
- * Generate an image from a text prompt using Pollinations AI
+ * Get next API key using round-robin load balancing
+ */
+const getNextApiKey = () => {
+  if (API_KEYS.length === 0) return '';
+  const key = API_KEYS[apiKeyIndex];
+  apiKeyIndex = (apiKeyIndex + 1) % API_KEYS.length;
+  console.log(`🔑 Using API key #${apiKeyIndex === 0 ? API_KEYS.length : apiKeyIndex} of ${API_KEYS.length}`);
+  return key;
+};
+
+// Cache for storing prompt -> imageUrl mappings
+const imageCache = new Map();
+
+/**
+ * Generate an image from a text prompt using ImageRouter.io API
+ * Uses caching - same prompt returns same image without API call
  * @param {string} prompt - The text prompt to generate image from
  * @returns {Promise<string>} - URL of the generated image
  */
@@ -12,52 +50,67 @@ export const generateImage = async (prompt) => {
       throw new Error("Prompt cannot be empty");
     }
 
-    // Generation pattern with better error handling
-    const width = 1024;
-    const height = 1024;
-    const seed = Math.floor(Math.random() * 1000);
-    const encodedPrompt = encodeURIComponent(prompt.trim());
+    const normalizedPrompt = prompt.trim().toLowerCase();
     
-    // Multiple URL formats for better compatibility
-    const urlFormats = [
-      // Try this first since it's working
-      () => `https://image.pollinations.ai/prompt/${encodedPrompt}`,
-      // With minimal parameters
-      () => `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}`,
-      // With seed
-      () => `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&seed=${seed}`,
-      // Full parameters without model parameter
-      () => {
-        const params = new URLSearchParams({
-          width: width,
-          height: height,
-          seed: seed,
-          nologo: 'true'
-        });
-        return `https://image.pollinations.ai/prompt/${encodedPrompt}?${params.toString()}`;
-      }
-    ];
-    
-    // Try each URL format
-    for (let i = 0; i < urlFormats.length; i++) {
-      const imageUrl = urlFormats[i]();
-      
-      try {
-        // Test if the URL is accessible
-        const isAccessible = await testImageUrl(imageUrl);
-        
-        if (isAccessible) {
-          console.log(`✅ Successfully generated image using format ${i + 1}`);
-          return imageUrl;
-        }
-      } catch (error) {
-        console.warn(`❌ Format ${i + 1} failed:`, error.message);
-        // Continue to next format
-      }
+    // Check cache first
+    if (imageCache.has(normalizedPrompt)) {
+      const cachedUrl = imageCache.get(normalizedPrompt);
+      console.log(`✅ Returning cached image for prompt: "${prompt}"`);
+      console.log(`📦 Cache hit! Image URL: ${cachedUrl}`);
+      return cachedUrl;
     }
+
+    console.log(`🎨 Generating NEW image with ImageRouter.io for prompt: "${prompt}"`);
+
+    // Enhance prompt for exact literal interpretation
+    const enhancedPrompt = `${prompt.trim()}, exactly as described, nothing more nothing less, literal interpretation, precise and accurate`;
+
+    // Get next API key for load balancing
+    const apiKey = getNextApiKey();
     
-    // If all Pollinations URLs fail, throw error
-    throw new Error("All image generation URL formats failed");
+    if (!apiKey) {
+      throw new Error('No API key available');
+    }
+
+    // Call ImageRouter.io API with optimized parameters for accuracy
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        prompt: enhancedPrompt,
+        model: 'run-diffusion/Juggernaut-Lightning-Flux',
+        n: 1,
+        size: 'auto',
+        quality: 'auto',
+        output_format: 'webp'
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`ImageRouter.io API error: ${response.status} - ${errorData}`);
+    }
+
+    const data = await response.json();
+    
+    // Extract image URL from response
+    // The response format might be: { data: [{ url: "..." }] } or similar
+    const imageUrl = data?.data?.[0]?.url || data?.url || data?.image_url;
+    
+    if (!imageUrl) {
+      console.error('Unexpected API response:', data);
+      throw new Error('No image URL in API response');
+    }
+
+    // Store in cache
+    imageCache.set(normalizedPrompt, imageUrl);
+    console.log(`✅ Successfully generated image: ${imageUrl}`);
+    console.log(`💾 Cached for future use. Total cached prompts: ${imageCache.size}`);
+    
+    return imageUrl;
     
   } catch (error) {
     console.error("❌ Error in generateImage:", error);
@@ -66,23 +119,26 @@ export const generateImage = async (prompt) => {
 };
 
 /**
- * Test if an image URL is accessible and loads successfully
- * @param {string} imageUrl - The image URL to test
- * @returns {Promise<boolean>} - True if image loads successfully
+ * Clear the image cache
  */
-const testImageUrl = async (imageUrl) => {
-  try {
-    // For server-side, we'll use fetch to test the URL
-    const response = await fetch(imageUrl, { 
-      method: 'HEAD',
-      timeout: 10000 // 10 seconds timeout
-    });
-    
-    return response.ok && response.headers.get('content-type')?.startsWith('image/');
-  } catch (error) {
-    return false;
-  }
+export const clearImageCache = () => {
+  const size = imageCache.size;
+  imageCache.clear();
+  console.log(`🗑️ Cleared ${size} cached images`);
+  return size;
 };
+
+/**
+ * Get cache statistics
+ */
+export const getCacheStats = () => {
+  return {
+    size: imageCache.size,
+    prompts: Array.from(imageCache.keys())
+  };
+};
+
+
 
 /**
  * Generate image with progress callback

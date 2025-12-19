@@ -1,7 +1,11 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import { generateImage, generateImageWithProgress } from './imageGenerator.js';
+import dotenv from 'dotenv';
+import { generateImage, generateImageWithProgress, clearImageCache, getCacheStats } from './imageGenerator.js';
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -60,10 +64,15 @@ app.post('/api/generate-image', async (req, res) => {
 
     console.log(`✅ Image generated successfully: ${imageUrl}`);
 
+    // Check if it was from cache
+    const cacheStats = getCacheStats();
+    
     res.json({
       success: true,
       imageUrl: imageUrl,
-      prompt: prompt
+      prompt: prompt,
+      cached: cacheStats.prompts.includes(prompt.trim().toLowerCase()),
+      totalCached: cacheStats.size
     });
 
   } catch (error) {
@@ -156,6 +165,8 @@ app.get('/api/health', (req, res) => {
  * Get server status and statistics
  */
 app.get('/api/status', (req, res) => {
+  const cacheStats = getCacheStats();
+  
   res.json({
     success: true,
     server: {
@@ -164,14 +175,33 @@ app.get('/api/status', (req, res) => {
       version: process.version,
       platform: process.platform
     },
+    cache: {
+      enabled: true,
+      totalCached: cacheStats.size,
+      cachedPrompts: cacheStats.prompts
+    },
     api: {
       endpoints: [
         'POST /api/generate-image',
         'POST /api/generate-image-stream',
         'GET /api/health',
-        'GET /api/status'
+        'GET /api/status',
+        'POST /api/clear-cache'
       ]
     }
+  });
+});
+
+/**
+ * POST /api/clear-cache
+ * Clear the image cache
+ */
+app.post('/api/clear-cache', (req, res) => {
+  const cleared = clearImageCache();
+  res.json({
+    success: true,
+    message: `Cleared ${cleared} cached images`,
+    clearedCount: cleared
   });
 });
 
