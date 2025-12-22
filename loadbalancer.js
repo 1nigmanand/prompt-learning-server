@@ -188,6 +188,88 @@ class ImageGenerationLoadBalancer {
   }
   
   /**
+   * Compare images with automatic load balancing and failover
+   */
+  async compareImages(targetImage, generatedImage, originalPrompt = '', options = {}) {
+    const maxAttempts = Math.min(this.servers.length, 3); // Try max 3 servers
+    const timeout = options.timeout || 60000; // 60 second timeout for comparison
+    
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const serverUrl = this.getNextServer();
+      const startTime = Date.now();
+      
+      try {
+        console.log(`🔍 Attempt ${attempt + 1}: Comparing images using server ${serverUrl}`);
+        
+        const response = await fetch(`${serverUrl}/api/compare-images`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            targetImage, 
+            generatedImage, 
+            originalPrompt 
+          }),
+          signal: AbortSignal.timeout(timeout)
+        });
+        
+        const responseTime = Date.now() - startTime;
+        
+        if (response.ok) {
+          const data = await response.json();
+          this.updateServerStats(serverUrl, responseTime, true);
+          
+          console.log(`✅ Comparison success with ${serverUrl} in ${responseTime}ms`);
+          
+          return {
+            ...data,
+            serverUsed: serverUrl,
+            responseTime: responseTime,
+            attempt: attempt + 1
+          };
+        } else {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+      } catch (error) {
+        const responseTime = Date.now() - startTime;
+        this.updateServerStats(serverUrl, responseTime, false);
+        
+        console.warn(`❌ Server ${serverUrl} failed (attempt ${attempt + 1}):`, error.message);
+        
+        if (error.name === 'TimeoutError' || responseTime > timeout) {
+          this.markServerFailed(serverUrl);
+        }
+        
+        // If this is the last attempt, throw the error
+        if (attempt === maxAttempts - 1) {
+          throw new Error(`All ${maxAttempts} server attempts failed. Last error: ${error.message}`);
+        }
+      }
+    }
+  }
+  
+  /**
+   * Compare images with progress updates
+   */
+  async compareImagesWithProgress(targetImage, generatedImage, originalPrompt = '', onProgress = null) {
+    try {
+      if (onProgress) onProgress("Starting image comparison...");
+      if (onProgress) onProgress("Selecting optimal server...");
+      
+      const result = await this.compareImages(targetImage, generatedImage, originalPrompt);
+      
+      if (onProgress) onProgress(`Comparison completed using ${result.serverUsed}!`);
+      
+      return result;
+    } catch (error) {
+      if (onProgress) onProgress(`Error: ${error.message}`);
+      throw error;
+    }
+  }
+  
+  /**
    * Health check for all servers
    */
   async checkAllServersHealth() {
