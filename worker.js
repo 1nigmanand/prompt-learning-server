@@ -120,18 +120,23 @@ const generateImage = async (prompt, env) => {
   }
 };
 
-// Image comparison logic using SiliconFlow API
+// Image comparison logic using SiliconFlow API with retry
 const compareImages = async (targetImageData, generatedImageData, originalPrompt, env) => {
-  try {
-    console.log('🔍 Starting image comparison...');
+  const maxRetries = 3;
+  const baseDelay = 1000; // 1 second
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      console.log(`🔍 Starting image comparison (attempt ${attempt + 1}/${maxRetries})...`);
 
-    // Get next comparison API key
-    const apiKey = getNextComparisonKey(env);
+      // Get next comparison API key for load balancing
+      const apiKey = getNextComparisonKey(env);
+      console.log(`Using API key ending in: ...${apiKey.slice(-8)}`);
 
     // Build comparison prompt
     const promptSection = originalPrompt ? `✏️ SECOND: Generated (prompt: "${originalPrompt}")` : '✏️ SECOND: Generated image';
     const comparisonPrompt = `Compare these two images:
-🎯 FIRST: Target image
+🎯 FIRST: Target image (jo banana hai)
 ${promptSection}
 
 Note: Use simple, playful Hinglish (Hindi + English) suitable for a 5-8 year old child.
@@ -140,7 +145,7 @@ Note: Keep all suggestions simple and actionable, giving short English prompt ex
 Format EXACTLY as:
 SIMILARITY SCORE: [number]%
 VISUAL DIFFERENCES: [max 70 simple words brief analysis in Hinglish for 5-8 year boy]
-PROMPT IMPROVEMENTS: [max 70 simple words concise suggestions in Hinglish for 5-8 year boy]`;
+PROMPT IMPROVEMENTS: [max 70 simple words - target image jaisa image banane ke liye prompt me kya add/change karein, specific suggestions with English prompt examples in Hinglish for 5-8 year boy]`;
 
     // Build request payload
     const requestPayload = {
@@ -172,7 +177,17 @@ PROMPT IMPROVEMENTS: [max 70 simple words concise suggestions in Hinglish for 5-
 
     if (!response.ok) {
       const errorData = await response.text();
-      throw new Error(`SiliconFlow API error: ${response.status} - ${errorData}`);
+      const statusCode = response.status;
+      
+      // Check if it's a 503 error that we should retry
+      if (statusCode === 503 && attempt < maxRetries - 1) {
+        const delay = baseDelay * Math.pow(2, attempt); // Exponential backoff: 1s, 2s, 4s
+        console.log(`⏳ API busy (503), retrying in ${delay}ms with next API key...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue; // Try again with next API key
+      }
+      
+      throw new Error(`SiliconFlow API error: ${statusCode} - ${errorData}`);
     }
 
     const data = await response.json();
@@ -214,14 +229,28 @@ PROMPT IMPROVEMENTS: [max 70 simple words concise suggestions in Hinglish for 5-
       metadata: {
         model: SILICONFLOW_MODEL,
         provider: 'SiliconFlow',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        attempt: attempt + 1
       }
     };
 
-  } catch (error) {
-    console.error('❌ Image comparison error:', error);
-    throw new Error(`Image comparison failed: ${error.message}`);
+    } catch (error) {
+      console.error(`❌ Image comparison error (attempt ${attempt + 1}):`, error.message);
+      
+      // If this is the last attempt, throw the error
+      if (attempt === maxRetries - 1) {
+        throw new Error(`Image comparison failed after ${maxRetries} attempts: ${error.message}`);
+      }
+      
+      // Otherwise, wait and try again with next API key
+      const delay = baseDelay * Math.pow(2, attempt);
+      console.log(`⏳ Retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
   }
+  
+  // This should never be reached, but just in case
+  throw new Error('Image comparison failed: Maximum retries exceeded');
 };
 
 // Main request handler

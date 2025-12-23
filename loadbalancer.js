@@ -400,10 +400,8 @@ function getStatsExample() {
   console.log('Server Statistics:', stats);
 }
 
-// Export for use in other files
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = ImageGenerationLoadBalancer;
-}
+// ES6 export for Node.js modules
+export default ImageGenerationLoadBalancer;
 
 // Browser export
 if (typeof window !== 'undefined') {

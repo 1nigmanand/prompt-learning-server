@@ -58,7 +58,7 @@ function buildComparisonPrompt(originalPrompt) {
   const promptSection = originalPrompt ? `✏️ SECOND: Generated (prompt: "${originalPrompt}")` : '✏️ SECOND: Generated image';
   
   return `Compare these two images:
-🎯 FIRST: Target image
+🎯 FIRST: Target image (jo banana hai)
 ${promptSection}
 
 Note: Use simple, playful Hinglish (Hindi + English) suitable for a 5-8 year old child.
@@ -67,7 +67,7 @@ Note: Keep all suggestions simple and actionable, giving short English prompt ex
 Format EXACTLY as:
 SIMILARITY SCORE: [number]%
 VISUAL DIFFERENCES: [max 70 simple words brief analysis in Hinglish for 5-8 year boy]
-PROMPT IMPROVEMENTS: [max 70 simple words concise suggestions in Hinglish for 5-8 year boy]`;
+PROMPT IMPROVEMENTS: [max 70 simple words - target image jaisa image banane ke liye prompt me kya add/change karein, specific suggestions with English prompt examples in Hinglish for 5-8 year boy]`;
 }
 
 /**
