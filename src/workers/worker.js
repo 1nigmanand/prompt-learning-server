@@ -9,7 +9,10 @@ import {
   handleHealth,
   handleStatus,
   handleGenerateImage,
-  handleGenerateImageStream
+  handleGenerateImageStream,
+  handleAcquireKey,
+  handleReleaseKey,
+  handleKeyStatus
 } from '../routes/index.js';
 
 // Basic headers for internal responses (CORS handled at load balancer level)
@@ -53,6 +56,18 @@ async function handleRequest(request, env) {
       return handleGenerateImageStream(request, env);
     }
     
+    if (path === '/api/acquire-key' && method === 'POST') {
+      return handleAcquireKey(request, env);
+    }
+    
+    if (path === '/api/release-key' && method === 'POST') {
+      return handleReleaseKey(request, env);
+    }
+    
+    if (path === '/api/key-status' && method === 'GET') {
+      return handleKeyStatus(request, env);
+    }
+    
     // 404 for unknown routes
     return new Response(JSON.stringify({
       success: false,
@@ -62,7 +77,10 @@ async function handleRequest(request, env) {
         'GET /api/health',
         'GET /api/status',
         'POST /api/generate-image',
-        'POST /api/generate-image-stream'
+        'POST /api/generate-image-stream',
+        'POST /api/acquire-key',
+        'POST /api/release-key',
+        'GET /api/key-status'
       ]
     }), {
       status: 404,

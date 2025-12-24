@@ -6,3 +6,4 @@
 export { handleRoot } from './docs.js';
 export { handleHealth, handleStatus } from './health.js';
 export { handleGenerateImage, handleGenerateImageStream } from './images.js';
+export { handleAcquireKey, handleReleaseKey, handleKeyStatus } from './keys.js';

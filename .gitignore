@@ -25,6 +25,7 @@ pnpm-lock.yaml
 **/secrets/
 *.secret
 *.key
+scripts/setup-workers-secrets.sh
 
 # ============================================
 # Cloudflare Workers

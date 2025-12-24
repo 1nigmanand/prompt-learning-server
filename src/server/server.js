@@ -7,6 +7,10 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { generateImage, generateImageWithProgress, clearImageCache, getCacheStats } from '../utils/imageGenerator-server.js';
+import keyManager from '../utils/keyManager.js';
+
+// Initialize key manager
+keyManager.initializeKeys();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -144,6 +148,95 @@ app.post('/api/generate-image-stream', async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to generate image'
+    });
+  }
+});
+
+/**
+ * POST /api/acquire-key
+ * Acquire an available API key
+ */
+app.post('/api/acquire-key', async (req, res) => {
+  try {
+    // Auto-release expired keys first
+    keyManager.autoReleaseExpiredKeys();
+
+    // Acquire key with waiting
+    const result = await keyManager.acquireKeyWithWait(30000, 1000);
+
+    if (result.success) {
+      console.log(`✅ Key #${result.keyId} acquired (waited ${result.waitTime}ms)`);
+      res.json(result);
+    } else {
+      console.warn('⚠️ All keys busy');
+      res.status(503).json(result);
+    }
+  } catch (error) {
+    console.error('❌ Error acquiring key:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to acquire API key'
+    });
+  }
+});
+
+/**
+ * POST /api/release-key
+ * Release an API key back to the pool
+ */
+app.post('/api/release-key', async (req, res) => {
+  try {
+    const { keyId } = req.body;
+
+    if (!keyId) {
+      return res.status(400).json({
+        success: false,
+        error: 'keyId is required'
+      });
+    }
+
+    const result = keyManager.releaseKey(keyId);
+
+    if (result.success) {
+      console.log(`✅ Key #${keyId} released (held for ${result.duration}ms)`);
+      res.json({
+        success: true,
+        keyId: keyId,
+        message: 'API key released successfully',
+        duration: result.duration
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        error: result.error
+      });
+    }
+  } catch (error) {
+    console.error('❌ Error releasing key:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to release API key'
+    });
+  }
+});
+
+/**
+ * GET /api/key-status
+ * Get current status of all API keys
+ */
+app.get('/api/key-status', (req, res) => {
+  try {
+    keyManager.autoReleaseExpiredKeys();
+    const status = keyManager.getStatus();
+    res.json({
+      success: true,
+      ...status
+    });
+  } catch (error) {
+    console.error('❌ Error getting key status:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to get key status'
     });
   }
 });
