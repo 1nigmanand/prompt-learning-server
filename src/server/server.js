@@ -2,8 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
-import { generateImage, generateImageWithProgress, clearImageCache, getCacheStats } from './imageGenerator.js';
-import ImageGenerationLoadBalancer from './loadbalancer.js';
+import { generateImage, generateImageWithProgress, clearImageCache, getCacheStats } from '../utils/imageGenerator-server.js';
+import ImageGenerationLoadBalancer from '../loadbalancer.js';
 
 // Load environment variables
 dotenv.config();

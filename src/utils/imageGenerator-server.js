@@ -1,4 +1,7 @@
-// Simple Image Generation Utility for Prompt Learning Tool
+/**
+ * Image Generation Module for Express Server (Local Development)
+ * Uses process.env for environment variables and includes caching
+ */
 
 // API Configuration - Load balancing across multiple API keys
 const API_KEYS = [
@@ -97,7 +100,6 @@ export const generateImage = async (prompt) => {
     const data = await response.json();
     
     // Extract image URL from response
-    // The response format might be: { data: [{ url: "..." }] } or similar
     const imageUrl = data?.data?.[0]?.url || data?.url || data?.image_url;
     
     if (!imageUrl) {
@@ -137,8 +139,6 @@ export const getCacheStats = () => {
     prompts: Array.from(imageCache.keys())
   };
 };
-
-
 
 /**
  * Generate image with progress callback

@@ -1,6 +1,6 @@
 # Main Load Balancer Worker (Public Entry Point)
 name = "prompt-learning-server"
-main = "main-worker.js"
+main = "src/workers/main-worker.js"
 compatibility_date = "2024-10-30"
 compatibility_flags = ["nodejs_compat"]
 
@@ -92,83 +92,83 @@ service = "prompt-server-20"
 # 20 Internal Workers for load distribution
 [env.server1]
 name = "prompt-server-1"
-main = "worker.js"
+main = "src/workers/worker.js"
 
 [env.server2]
 name = "prompt-server-2"
-main = "worker.js"
+main = "src/workers/worker.js"
 
 [env.server3]
 name = "prompt-server-3"
-main = "worker.js"
+main = "src/workers/worker.js"
 
 [env.server4]
 name = "prompt-server-4"
-main = "worker.js"
+main = "src/workers/worker.js"
 
 [env.server5]
 name = "prompt-server-5"
-main = "worker.js"
+main = "src/workers/worker.js"
 
 [env.server6]
 name = "prompt-server-6"
-main = "worker.js"
+main = "src/workers/worker.js"
 
 [env.server7]
 name = "prompt-server-7"
-main = "worker.js"
+main = "src/workers/worker.js"
 
 [env.server8]
 name = "prompt-server-8"
-main = "worker.js"
+main = "src/workers/worker.js"
 
 [env.server9]
 name = "prompt-server-9"
-main = "worker.js"
+main = "src/workers/worker.js"
 
 [env.server10]
 name = "prompt-server-10"
-main = "worker.js"
+main = "src/workers/worker.js"
 
 [env.server11]
 name = "prompt-server-11"
-main = "worker.js"
+main = "src/workers/worker.js"
 
 [env.server12]
 name = "prompt-server-12"
-main = "worker.js"
+main = "src/workers/worker.js"
 
 [env.server13]
 name = "prompt-server-13"
-main = "worker.js"
+main = "src/workers/worker.js"
 
 [env.server14]
 name = "prompt-server-14"
-main = "worker.js"
+main = "src/workers/worker.js"
 
 [env.server15]
 name = "prompt-server-15"
-main = "worker.js"
+main = "src/workers/worker.js"
 
 [env.server16]
 name = "prompt-server-16"
-main = "worker.js"
+main = "src/workers/worker.js"
 
 [env.server17]
 name = "prompt-server-17"
-main = "worker.js"
+main = "src/workers/worker.js"
 
 [env.server18]
 name = "prompt-server-18"
-main = "worker.js"
+main = "src/workers/worker.js"
 
 [env.server19]
 name = "prompt-server-19"
-main = "worker.js"
+main = "src/workers/worker.js"
 
 [env.server20]
 name = "prompt-server-20"
-main = "worker.js"
+main = "src/workers/worker.js"
 
 # Main load balancer environment
 [env.main]

@@ -1,307 +1,128 @@
-# Prompt Learning Server - API Only
+# 🎨 Prompt Learning Server
 
-A lightweight Node.js Express API server for AI-powered image generation using Pollinations AI. This is a backend-only service designed for deployment without any frontend dependencies.
+AI-powered Image Generation API deployed on Cloudflare Workers with load balancing across 20 edge servers.
 
-## 🚀 Features
-
-- 🎨 **AI Image Generation**: Generate high-quality images from text prompts
-- 🔄 **Multiple Fallback URLs**: Ensures high success rate with various URL formats
-- 📡 **Pure REST API**: Clean JSON API with no frontend dependencies
-- 🚀 **Real-time Progress**: Server-Sent Events for progress updates
-- 🛡️ **Production Ready**: Comprehensive error handling and security
-- 📊 **Health Monitoring**: Built-in health check and status endpoints
-- ⚡ **Lightweight**: Minimal dependencies for fast deployment
-
-## 📋 API Endpoints
-
-### `GET /`
-Get API documentation and endpoint information.
-
-**Response:**
-```json
-{
-  "name": "Prompt Learning Server",
-  "version": "1.0.0",
-  "description": "AI-powered image generation API using Pollinations AI",
-  "endpoints": {...},
-  "usage": {...},
-  "timestamp": "2024-01-01T12:00:00.000Z"
-}
-```
-
-### `POST /api/generate-image`
-Generate an image from a text prompt.
-
-**Request:**
-```json
-{
-  "prompt": "a beautiful sunset over mountains"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "imageUrl": "https://image.pollinations.ai/prompt/...",
-  "prompt": "a beautiful sunset over mountains"
-}
-```
-
-### `POST /api/generate-image-stream`
-Generate an image with real-time progress updates via Server-Sent Events.
-
-**Request:**
-```json
-{
-  "prompt": "a beautiful sunset over mountains"
-}
-```
-
-**Response:** Server-Sent Events stream with progress updates.
-
-### `GET /api/health`
-Health check endpoint.
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Server is running",
-  "timestamp": "2024-01-01T12:00:00.000Z",
-  "version": "1.0.0"
-}
-```
-
-### `GET /api/status`
-Detailed server status and statistics.
-
-## 🚀 Deployment
-
-### Local Development
-
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-2. **Start the server:**
-   ```bash
-   npm start
-   ```
-
-3. **Test the API:**
-   ```bash
-   curl http://localhost:3000/api/health
-   ```
-
-### Production Deployment
-
-#### Environment Variables
-- `PORT` - Server port (default: 3000)
-- `NODE_ENV` - Set to "production" for production deployment
-
-#### Docker Deployment
-
-Create `Dockerfile`:
-```dockerfile
-FROM node:18-alpine
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm ci --only=production
-
-COPY . .
-
-EXPOSE 3000
-
-CMD ["npm", "start"]
-```
-
-Build and run:
-```bash
-docker build -t prompt-learning-server .
-docker run -p 3000:3000 prompt-learning-server
-```
-
-#### Platform-Specific Deployments
-
-**Heroku:**
-```bash
-# Create Procfile
-echo "web: npm start" > Procfile
-
-# Deploy
-git init
-git add .
-git commit -m "Initial commit"
-heroku create your-app-name
-git push heroku main
-```
-
-**Railway:**
-```bash
-# No additional configuration needed
-# Connect your GitHub repo to Railway
-```
-
-**Render:**
-```bash
-# Build Command: npm install
-# Start Command: npm start
-```
-
-**DigitalOcean App Platform:**
-```bash
-# Runtime: Node.js
-# Build Command: npm install
-# Run Command: npm start
-```
-
-## 📝 Usage Examples
-
-### cURL Examples
-
-**Generate Image:**
-```bash
-curl -X POST https://your-domain.com/api/generate-image \
-  -H "Content-Type: application/json" \
-  -d '{"prompt": "a majestic lion in the African savanna"}'
-```
-
-**Health Check:**
-```bash
-curl https://your-domain.com/api/health
-```
-
-### JavaScript/Node.js
-
-```javascript
-const response = await fetch('https://your-domain.com/api/generate-image', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    prompt: 'a cozy coffee shop in winter'
-  })
-});
-
-const data = await response.json();
-console.log(data.imageUrl);
-```
-
-### Python
-
-```python
-import requests
-
-response = requests.post('https://your-domain.com/api/generate-image', 
-  json={'prompt': 'a futuristic cityscape'})
-
-data = response.json()
-print(data['imageUrl'])
-```
-
-## 🔧 Configuration
-
-### Image Generation Parameters
-- **Width**: 1024px (fixed)
-- **Height**: 1024px (fixed)
-- **Format**: Auto-detected by Pollinations AI
-- **Fallback URLs**: 4 different URL formats for reliability
-
-### Error Handling
-- Input validation (prompt length, type)
-- Network timeout handling
-- Multiple URL format fallbacks
-- Comprehensive error responses
-
-## 📁 File Structure
+## 📁 Project Structure
 
 ```
 prompt_learning_server/
-├── server.js              # Main Express server
-├── imageGenerator.js      # Image generation logic
-├── package.json          # Dependencies
-└── README.md            # This file
+├── src/
+│   ├── workers/           # Cloudflare Workers
+│   │   ├── worker.js      # Individual worker (20 instances)
+│   │   └── main-worker.js # Load balancer (public entry)
+│   ├── server/            # Express server (local dev)
+│   │   └── server.js
+│   └── *.js              # Utility modules
+├── tests/                 # Test files
+│   └── test-api.js
+├── scripts/               # Deployment scripts
+├── docs/                  # Documentation
+├── package.json          # Dependencies & scripts
+├── wrangler.toml         # Cloudflare Workers config
+├── .env.example          # Environment variables template
+└── README.md             # This file
 ```
 
-## 🔒 Security Features
+## 🚀 Quick Start
 
-- **Helmet.js**: Security headers
-- **CORS**: Configurable cross-origin requests
-- **Input validation**: Prompt sanitization
-- **Rate limiting**: Request size limits
+### Local Development
+```bash
+# Install dependencies
+npm install
 
-## 📊 Performance
+# Start Express server
+npm run dev
 
-- **Lightweight**: ~15MB total deployment size
-- **Fast startup**: < 2 seconds cold start
-- **Memory usage**: ~50MB base memory
-- **Response time**: ~2-10 seconds per image generation
+# Test API
+npm test
+```
 
-## 🛠️ Dependencies
+### Cloudflare Workers Deployment
+```bash
+# Deploy load balancer + all workers
+npm run worker:deploy:all
 
-**Production:**
-- `express` - Web framework
-- `cors` - Cross-origin resource sharing
-- `helmet` - Security middleware
+# Deploy specific server
+npm run worker:deploy:server1
 
-**Total bundle size:** ~15MB
+# Watch logs
+npm run worker:tail
+```
 
-## 🔍 Monitoring
+## 🔑 Environment Variables
 
-The API provides built-in monitoring endpoints:
+Create `.env` file with:
+```env
+# Image Generation API Keys (7 keys for load balancing)
+IMAGE_ROUTER_API_KEY_1=your_key_1
+IMAGE_ROUTER_API_KEY_2=your_key_2
+...
 
-- `GET /api/health` - Basic health check
-- `GET /api/status` - Detailed server statistics
+# Image Comparison API Keys (8 keys for load balancing)
+COMPARISON_API_KEY_1=your_comparison_key_1
+COMPARISON_API_KEY_2=your_comparison_key_2
+...
+```
 
-## 📋 Requirements
+## 📡 API Endpoints
 
-- **Node.js**: 16.0.0 or higher
-- **Memory**: 512MB minimum
-- **Network**: Outbound HTTPS access for Pollinations AI
+### Generate Image
+```bash
+POST /api/generate-image
+Content-Type: application/json
 
-## 🐛 Troubleshooting
+{
+  "prompt": "a beautiful sunset over mountains"
+}
+```
 
-**Common Issues:**
+### Compare Images
+```bash
+POST /api/compare-images
+Content-Type: application/json
 
-1. **Image generation fails:**
-   - Check network connectivity
-   - Verify Pollinations AI service status
-   - Review server logs for specific errors
+{
+  "targetImage": "data:image/jpeg;base64,...",
+  "generatedImage": "data:image/jpeg;base64,...",
+  "originalPrompt": "sunset"
+}
+```
 
-2. **Server won't start:**
-   - Verify Node.js version (16+)
-   - Check port availability
-   - Ensure all dependencies are installed
+### Health Check
+```bash
+GET /api/health
+```
 
-3. **CORS errors:**
-   - Configure CORS origins in server.js
-   - Verify request headers
+## 🌐 Live URLs
 
-## 📄 License
+- **Main Load Balancer**: `https://prompt-learning-server.prompt-tool.workers.dev`
+- **Individual Workers**: `https://prompt-server-{1-20}.prompt-tool.workers.dev`
 
-MIT License - Open source and free to use.
+## 🛠️ Tech Stack
 
-## 🤝 API Integration
+- **Runtime**: Cloudflare Workers (Edge Computing)
+- **Image Generation**: ImageRouter.io (Juggernaut-Lightning-Flux)
+- **Image Comparison**: SiliconFlow API (Qwen3-VL-8B-Instruct)
+- **Local Dev**: Express.js
+- **Load Balancing**: 20 Workers + Round-robin API key rotation
 
-This API is designed to be easily integrated into:
-- Web applications
-- Mobile apps
-- Desktop applications
-- Other microservices
-- Automation tools
+## 📊 Features
 
-No frontend dependencies means faster deployment and better scalability for your specific use case.
+✅ Global edge deployment (200+ cities)  
+✅ Load balancing across 20 workers  
+✅ Round-robin API key rotation  
+✅ Automatic retry with exponential backoff  
+✅ Image generation with prompt enhancement  
+✅ Image comparison in Hinglish for kids  
+✅ < 50ms average response time  
 
+## 🔒 Security
 
+- API keys stored as Cloudflare secrets
+- CORS enabled for authorized domains
+- Rate limiting per worker
+- Input validation & sanitization
 
+## 📝 License
 
-
-
-
-
-create a lion running behind a dog and dog is barking on the lion 
+MIT
