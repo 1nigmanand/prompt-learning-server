@@ -176,7 +176,8 @@ const allowedOrigins = [
   "http://localhost:5173",
   'https://testing-repo-swart-eight.vercel.app',
   'https://prompt-test-eight.vercel.app',
-  'https://abracadraw.navgurukul.org'
+  'https://abracadraw.navgurukul.org',
+  'https://prompt-tool-psi.vercel.app'
 ];
 
 const getCorsHeaders = (origin) => {
