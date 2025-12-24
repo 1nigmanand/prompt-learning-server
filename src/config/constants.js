@@ -9,12 +9,6 @@ export const API_CONFIG = {
     MODEL: 'run-diffusion/Juggernaut-Lightning-Flux',
     OUTPUT_FORMAT: 'webp',
     MAX_PROMPT_LENGTH: 1000
-  },
-  SILICONFLOW: {
-    URL: 'https://api.siliconflow.com/v1/chat/completions',
-    MODEL: 'Qwen/Qwen3-VL-8B-Instruct',
-    MAX_TOKENS: 800,
-    TEMPERATURE: 0.2
   }
 };
 

@@ -3,37 +3,45 @@
  * Uses process.env for environment variables and includes caching
  */
 
-// API Configuration - Load balancing across multiple API keys
-const API_KEYS = [
-  process.env.IMAGE_ROUTER_API_KEY_1,
-  process.env.IMAGE_ROUTER_API_KEY_2,
-  process.env.IMAGE_ROUTER_API_KEY_3,
-  process.env.IMAGE_ROUTER_API_KEY_4,
-  process.env.IMAGE_ROUTER_API_KEY_5,
-  process.env.IMAGE_ROUTER_API_KEY_6,
-  process.env.IMAGE_ROUTER_API_KEY_7
-].filter(key => key); // Remove undefined keys
-
 const API_URL = 'https://api.imagerouter.io/v1/openai/images/generations';
 
-// Validate API keys on module load
-if (API_KEYS.length === 0) {
-  console.warn('⚠️ WARNING: No API keys found in environment variables!');
-} else {
-  console.log(`✅ Loaded ${API_KEYS.length} API keys for load balancing`);
-}
-
-// Round-robin counter for API key selection
+// Lazy-load API keys to ensure .env is loaded first
+let API_KEYS = null;
 let apiKeyIndex = 0;
+
+/**
+ * Get API keys array (lazy initialization)
+ */
+const getApiKeys = () => {
+  if (API_KEYS === null) {
+    API_KEYS = [
+      process.env.IMAGE_ROUTER_API_KEY_1,
+      process.env.IMAGE_ROUTER_API_KEY_2,
+      process.env.IMAGE_ROUTER_API_KEY_3,
+      process.env.IMAGE_ROUTER_API_KEY_4,
+      process.env.IMAGE_ROUTER_API_KEY_5,
+      process.env.IMAGE_ROUTER_API_KEY_6,
+      process.env.IMAGE_ROUTER_API_KEY_7
+    ].filter(key => key); // Remove undefined keys
+    
+    if (API_KEYS.length === 0) {
+      console.warn('⚠️ WARNING: No API keys found in environment variables!');
+    } else {
+      console.log(`✅ Loaded ${API_KEYS.length} API keys for load balancing`);
+    }
+  }
+  return API_KEYS;
+};
 
 /**
  * Get next API key using round-robin load balancing
  */
 const getNextApiKey = () => {
-  if (API_KEYS.length === 0) return '';
-  const key = API_KEYS[apiKeyIndex];
-  apiKeyIndex = (apiKeyIndex + 1) % API_KEYS.length;
-  console.log(`🔑 Using API key #${apiKeyIndex === 0 ? API_KEYS.length : apiKeyIndex} of ${API_KEYS.length}`);
+  const keys = getApiKeys();
+  if (keys.length === 0) return '';
+  const key = keys[apiKeyIndex];
+  apiKeyIndex = (apiKeyIndex + 1) % keys.length;
+  console.log(`🔑 Using API key #${apiKeyIndex === 0 ? keys.length : apiKeyIndex} of ${keys.length}`);
   return key;
 };
 

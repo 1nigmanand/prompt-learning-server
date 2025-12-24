@@ -1,18 +1,15 @@
+import dotenv from 'dotenv';
+
+// Load environment variables FIRST before any other imports
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import dotenv from 'dotenv';
 import { generateImage, generateImageWithProgress, clearImageCache, getCacheStats } from '../utils/imageGenerator-server.js';
-import ImageGenerationLoadBalancer from '../loadbalancer.js';
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// Create load balancer instance for image comparison
-const loadBalancer = new ImageGenerationLoadBalancer();
 
 // Middleware
 app.use(helmet());
@@ -152,71 +149,6 @@ app.post('/api/generate-image-stream', async (req, res) => {
 });
 
 /**
- * POST /api/compare-images
- * Compare two images and provide feedback
- * Body: { targetImage: string (data URL), generatedImage: string (data URL), originalPrompt?: string }
- * Response: { success: boolean, similarityScore: number, keyDifferences: string, promptImprovements: string }
- */
-app.post('/api/compare-images', async (req, res) => {
-  try {
-    const { targetImage, generatedImage, originalPrompt } = req.body;
-
-    // Validate request
-    if (!targetImage || !generatedImage) {
-      return res.status(400).json({
-        success: false,
-        error: 'Both targetImage and generatedImage are required'
-      });
-    }
-
-    if (typeof targetImage !== 'string' || typeof generatedImage !== 'string') {
-      return res.status(400).json({
-        success: false,
-        error: 'Images must be base64 data URL strings'
-      });
-    }
-
-    // Validate data URL format
-    if (!targetImage.startsWith('data:image/') || !generatedImage.startsWith('data:image/')) {
-      return res.status(400).json({
-        success: false,
-        error: 'Images must be valid data URLs (data:image/...)'
-      });
-    }
-
-    console.log(`🔍 Comparing images${originalPrompt ? ` for prompt: "${originalPrompt}"` : ''}`);
-
-    // Compare images using load balancer
-    const result = await loadBalancer.compareImages(targetImage, generatedImage, originalPrompt || '');
-
-    if (!result.success) {
-      throw new Error(result.error || 'Comparison failed');
-    }
-
-    console.log(`✅ Images compared successfully: ${result.similarityScore}%`);
-
-    res.json({
-      success: true,
-      similarityScore: result.similarityScore,
-      fullResponse: result.fullResponse,
-      keyDifferences: result.keyDifferences,
-      promptImprovements: result.promptImprovements,
-      metadata: result.metadata,
-      serverUsed: result.serverUsed,
-      responseTime: result.responseTime
-    });
-
-  } catch (error) {
-    console.error('❌ Error comparing images:', error);
-    
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Failed to compare images'
-    });
-  }
-});
-
-/**
  * GET /api/health
  * Health check endpoint
  */
@@ -253,7 +185,6 @@ app.get('/api/status', (req, res) => {
       endpoints: [
         'POST /api/generate-image',
         'POST /api/generate-image-stream',
-        'POST /api/compare-images',
         'GET /api/health',
         'GET /api/status',
         'POST /api/clear-cache'
@@ -280,11 +211,10 @@ app.get('/', (req, res) => {
   res.json({
     name: 'Prompt Learning Server',
     version: '1.0.0',
-    description: 'AI-powered image generation and comparison API',
+    description: 'AI-powered image generation API',
     endpoints: {
       'POST /api/generate-image': 'Generate an image from a text prompt',
       'POST /api/generate-image-stream': 'Generate an image with real-time progress updates',
-      'POST /api/compare-images': 'Compare two images and get feedback',
       'GET /api/health': 'Check server health status',
       'GET /api/status': 'Get detailed server status and statistics'
     },
@@ -330,7 +260,6 @@ app.listen(PORT, () => {
   console.log(`   GET  http://localhost:${PORT}/                    - API documentation`);
   console.log(`   POST http://localhost:${PORT}/api/generate-image  - Generate image`);
   console.log(`   POST http://localhost:${PORT}/api/generate-image-stream - Generate with progress`);
-  console.log(`   POST http://localhost:${PORT}/api/compare-images  - Compare images`);
   console.log(`   GET  http://localhost:${PORT}/api/health          - Health check`);
   console.log(`   GET  http://localhost:${PORT}/api/status          - Server status`);
   console.log(`🌐 Ready for deployment!`);

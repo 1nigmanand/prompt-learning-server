@@ -56,12 +56,11 @@ Create `.env` file with:
 # Image Generation API Keys (7 keys for load balancing)
 IMAGE_ROUTER_API_KEY_1=your_key_1
 IMAGE_ROUTER_API_KEY_2=your_key_2
-...
-
-# Image Comparison API Keys (8 keys for load balancing)
-COMPARISON_API_KEY_1=your_comparison_key_1
-COMPARISON_API_KEY_2=your_comparison_key_2
-...
+IMAGE_ROUTER_API_KEY_3=your_key_3
+IMAGE_ROUTER_API_KEY_4=your_key_4
+IMAGE_ROUTER_API_KEY_5=your_key_5
+IMAGE_ROUTER_API_KEY_6=your_key_6
+IMAGE_ROUTER_API_KEY_7=your_key_7
 ```
 
 ## 📡 API Endpoints
@@ -73,18 +72,6 @@ Content-Type: application/json
 
 {
   "prompt": "a beautiful sunset over mountains"
-}
-```
-
-### Compare Images
-```bash
-POST /api/compare-images
-Content-Type: application/json
-
-{
-  "targetImage": "data:image/jpeg;base64,...",
-  "generatedImage": "data:image/jpeg;base64,...",
-  "originalPrompt": "sunset"
 }
 ```
 
@@ -102,7 +89,6 @@ GET /api/health
 
 - **Runtime**: Cloudflare Workers (Edge Computing)
 - **Image Generation**: ImageRouter.io (Juggernaut-Lightning-Flux)
-- **Image Comparison**: SiliconFlow API (Qwen3-VL-8B-Instruct)
 - **Local Dev**: Express.js
 - **Load Balancing**: 20 Workers + Round-robin API key rotation
 
@@ -113,7 +99,6 @@ GET /api/health
 ✅ Round-robin API key rotation  
 ✅ Automatic retry with exponential backoff  
 ✅ Image generation with prompt enhancement  
-✅ Image comparison in Hinglish for kids  
 ✅ < 50ms average response time  
 
 ## 🔒 Security
